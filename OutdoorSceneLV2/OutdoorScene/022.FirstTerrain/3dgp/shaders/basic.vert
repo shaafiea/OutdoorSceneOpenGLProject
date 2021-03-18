@@ -59,6 +59,11 @@ vec4 DirectionalLight(DIRECTIONAL light)
 }
 
 
+// FOG
+out float fogFactor;
+uniform float fogDensity;
+
+
 void main(void) 
 {
   position = matrixModelView * vec4(aVertex, 1.0);
@@ -79,4 +84,5 @@ void main(void)
 	if (lightDir.on == 1) 
 		color += DirectionalLight(lightDir);
 
+  fogFactor = exp2(-fogDensity * length(position));
 }

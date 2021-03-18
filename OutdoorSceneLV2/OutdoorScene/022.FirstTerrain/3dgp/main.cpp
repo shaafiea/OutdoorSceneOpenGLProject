@@ -1,4 +1,6 @@
 #include <iostream>
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include "GL/glew.h"
 #include "GL/3dgl.h"
 #include "GL/glut.h"
@@ -23,6 +25,15 @@ int pointLight = 1;
 int ambientLight = 1;
 int bulbambientLight = 1;
 
+//Global Variables (Particle System)
+GLuint idBufferVelocity;
+GLuint idBufferStartTime;
+
+// Particle System Params
+const float PERIOD = 0.00075f;
+const float LIFETIME = 6;
+const int NPARTICLES = (int)(LIFETIME / PERIOD);
+
 
 // 3D Models
 C3dglSkyBox skybox;
@@ -34,10 +45,17 @@ C3dglModel car;
 //Bitmap textures
 C3dglBitmap bmGround;
 C3dglBitmap bmRoad;
+C3dglBitmap bmSnow;//Level 2 Particle System Textures
 
 GLuint idTexSand;
 GLuint idTexRoad;
+GLuint idTexSnow;
 GLuint idTexNone;
+
+// GLSL Objects (Shader Program)
+C3dglProgram ProgramBasic;
+C3dglProgram ProgramParticle;
+
 // camera position (for first person type camera navigation)
 mat4 matrixView;			// The View Matrix
 float angleTilt = 15.f;		// Tilt Angle
@@ -118,12 +136,69 @@ bool init()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bmRoad.GetWidth(), bmRoad.GetHeight(), 0, GL_RGBA,
 		GL_UNSIGNED_BYTE, bmRoad.GetBits());
 
+	// Setup the particle system
+	ProgramParticle.SendUniform("initialPos", 0.0, 0.58, 0.0);
+	//ProgramParticle.SendUniform("gravity", 0.0, -1.0, 0.0);
+	ProgramParticle.SendUniform("particleLifetime", LIFETIME);
+
+
 	// none (simple-white) texture
 	glGenTextures(1, &idTexNone);
 	glBindTexture(GL_TEXTURE_2D, idTexNone);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	BYTE bytes[] = { 255, 255, 255 };
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_BGR, GL_UNSIGNED_BYTE, &bytes);
+
+	//Loading the snow particles bitmap
+	bmSnow.Load("models/snow.bmp", GL_RGBA);
+	if (!bmSnow.GetBits()) return false;
+	glActiveTexture(GL_TEXTURE0);
+	glGenTextures(1, &idTexSnow);
+	glBindTexture(GL_TEXTURE_2D, idTexSnow);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bmSnow.GetWidth(), bmSnow.GetHeight(), 0, GL_RGBA,
+		GL_UNSIGNED_BYTE, bmSnow.GetBits());
+
+	// Prepare the particle buffers
+	std::vector<float> bufferVelocity;
+	std::vector<float> bufferStartTime;
+	float time = 0;
+	for (int i = 0; i < NPARTICLES; i++)
+	{
+		float theta = (float)M_PI / 6.f * (float)rand() / (float)RAND_MAX;
+		float phi = (float)M_PI * 2.f * (float)rand() / (float)RAND_MAX;
+		float x = sin(theta) * cos(phi);
+		float y = cos(theta);
+		float z = sin(theta) * sin(phi);
+		float v = 2 + 0.5f * (float)rand() / (float)RAND_MAX;
+
+		bufferVelocity.push_back(x * v);
+		bufferVelocity.push_back(y * v);
+		bufferVelocity.push_back(z * v);
+
+		bufferStartTime.push_back(time);
+		time += PERIOD;
+	}
+	glGenBuffers(1, &idBufferVelocity);
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferVelocity);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * bufferVelocity.size(), &bufferVelocity[0],
+		GL_STATIC_DRAW);
+	glGenBuffers(1, &idBufferStartTime);
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferStartTime);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * bufferStartTime.size(), &bufferStartTime[0],
+		GL_STATIC_DRAW);
+
+	// switch on: transparency/blending
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	/* setup the point size (old)
+	glEnable(GL_POINT_SPRITE);
+	glPointSize(5);*/
+
+	//Setting the shader (Enable Functionality)
+	glEnable(0x8642);
+	glEnable(GL_POINT_SPRITE);
 
 	// Initialise the View Matrix (initial position of the camera)
 	matrixView = rotate(mat4(1.f), radians(angleTilt), vec3(1.f, 0.f, 0.f));
@@ -229,6 +304,9 @@ void render()
 		m = matrixView;
 		skybox.render(m);
 		Program.SendUniform("lightAmbient.color", 0.4, 0.4, 0.4);
+
+		//Fog
+
 	} else if (dayLight == 0) //Nighttime
 	{
 		//setup switches to the lightss
@@ -279,6 +357,9 @@ void render()
 		Program.SendUniform("materialDiffuse", 1.0, 1.0, 1.0);
 		Program.SendUniform("materialAmbient", 0.1, 0.1, 0.1);
 	}
+
+	// Render Particle Animation Time
+	ProgramParticle.SendUniform("time", glutGet(GLUT_ELAPSED_TIME) / 1000.f - 2);
 
 	// render the terrain
 	glActiveTexture(GL_TEXTURE0);
@@ -354,6 +435,45 @@ void render()
 	Program.SendUniform("materialDiffuse", 0.1, 0.1, 0.1);
 	lamp.render(m);
 
+	///////////////////////////////////
+// TO DO: RENDER THE PARTICLE SYSTEM
+
+// particles
+	glDepthMask(GL_FALSE);				// disable depth buffer updates
+	glActiveTexture(GL_TEXTURE0);			// choose the active texture
+	glBindTexture(GL_TEXTURE_2D, idTexSnow);	// bind the texture
+
+
+	ProgramParticle.Use();
+
+	m = matrixView;
+	ProgramParticle.SendUniform("matrixModelView", m);
+
+	// render the buffer
+	glEnableVertexAttribArray(0);	// velocity
+	glEnableVertexAttribArray(1);	// start time
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferVelocity);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferStartTime);
+	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawArrays(GL_POINTS, 0, NPARTICLES);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+
+	// render the buffer
+	glEnableVertexAttribArray(0);	// velocity
+	glEnableVertexAttribArray(1);	// start time
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferVelocity);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferStartTime);
+	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawArrays(GL_POINTS, 0, NPARTICLES);
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+
+	glDepthMask(GL_TRUE);		// don't forget to switch the depth test updates back on
+
+
 	// the camera must be moved down by terrainY to avoid unwanted effects
 	matrixView = translate(matrixView, vec3(0, -terrainY, 0));
 
@@ -374,6 +494,9 @@ void reshape(int w, int h)
 	// Setup the Projection Matrix
 	Program.SendUniform("matrixProjection", matrixProjection);
 
+	mat4 m = perspective(radians(60.f), ratio, 0.02f, 1000.f);
+	ProgramBasic.SendUniform("matrixProjection", m);
+	ProgramParticle.SendUniform("matrixProjection", m);
 }
 
 // Handle WASDQE keys

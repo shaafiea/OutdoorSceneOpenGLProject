@@ -8,6 +8,10 @@ in vec4 position;
 in vec3 normal;
 in vec2 texCoord0;
 
+//Fog
+uniform vec3 fogColour;
+in float fogFactor;
+
 
 uniform sampler2D texture0;
 
@@ -64,4 +68,5 @@ void main(void)
 		outColor += PointLight(lightPoint2);
 
 	outColor *= texture(texture0, texCoord0);
+	outColor = mix(vec4(fogColour, 1), outColor, fogFactor);
 }

@@ -46,6 +46,12 @@
   <ItemGroup>
     <None Include="shaders\basic.frag" />
     <None Include="shaders\basic.vert" />
+    <None Include="shaders\particles.frag">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="shaders\particles.vert">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GL\3dgl.h">
