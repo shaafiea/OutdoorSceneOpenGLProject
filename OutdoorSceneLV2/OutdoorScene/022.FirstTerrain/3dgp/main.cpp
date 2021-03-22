@@ -28,10 +28,11 @@ int bulbambientLight = 1;
 //Global Variables (Particle System)
 GLuint idBufferVelocity;
 GLuint idBufferStartTime;
+GLuint idBufferPosition;
 
 // Particle System Params
-const float PERIOD = 0.00075f;
-const float LIFETIME = 6;
+const float PERIOD = 0.00175f;
+const float LIFETIME = 4;
 const int NPARTICLES = (int)(LIFETIME / PERIOD);
 
 
@@ -69,10 +70,32 @@ bool init()
 	glShadeModel(GL_SMOOTH);	// smooth shading mode is the default one; try GL_FLAT here!
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);	// this is the default one; try GL_LINE!
 
+
+
 	// Initialise Shaders
 	C3dglShader VertexShader;
 	C3dglShader FragmentShader;
 
+	// Initialise Shader - Particle
+	if (!VertexShader.Create(GL_VERTEX_SHADER)) return false;
+	if (!VertexShader.LoadFromFile("shaders/particles.vert")) return false;
+	if (!VertexShader.Compile()) return false;
+
+	if (!FragmentShader.Create(GL_FRAGMENT_SHADER)) return false;
+	if (!FragmentShader.LoadFromFile("shaders/particles.frag")) return false;
+	if (!FragmentShader.Compile()) return false;
+
+	if (!ProgramParticle.Create()) return false;
+	if (!ProgramParticle.Attach(VertexShader)) return false;
+	if (!ProgramParticle.Attach(FragmentShader)) return false;
+	if (!ProgramParticle.Link()) return false;
+	if (!ProgramParticle.Use(true)) return false;
+
+	// glut additional setup
+	glutSetVertexAttribCoord3(ProgramBasic.GetAttribLocation("aVertex"));
+	glutSetVertexAttribNormal(ProgramBasic.GetAttribLocation("aNormal"));
+
+	// Initialise Shader - Lighting
 	if (!VertexShader.Create(GL_VERTEX_SHADER)) return false;
 	if (!VertexShader.LoadFromFile("shaders/basic.vert")) return false;
 	if (!VertexShader.Compile()) return false;
@@ -107,16 +130,16 @@ bool init()
 		"models\\TropicalSunnyDay\\TropicalSunnyDayDown1024.jpg")) return false;
 
 	//load night box
-	if (!nightbox.load("models\\TropicalNightDay\\TropicalNightDayFront1024.png",
-		"models\\TropicalNightDay\\TropicalNightDayLeft1024.png",
-		"models\\TropicalNightDay\\TropicalNightDayBack1024.png",
-		"models\\TropicalNightDay\\TropicalNightDayRight1024.png",
-		"models\\TropicalNightDay\\TropicalNightDayUp1024.png",
-		"models\\TropicalNightDay\\TropicalNightDayDown1024.png")) return false;
+	if (!nightbox.load("models\\FullMoon\\FullMoonFront2048.png",
+		"models\\FullMoon\\FullMoonLeft2048.png",
+		"models\\FullMoon\\FullMoonBack2048.png",
+		"models\\FullMoon\\FullMoonRight2048.png",
+		"models\\FullMoon\\FullMoonUp2048.png",
+		"models\\FullMoon\\FullMoonDown2048.png")) return false;
 
 
 	//Loading the bitmap
-	bmGround.Load("models/sand.png", GL_RGBA);
+	bmGround.Load("models/snow.jpg", GL_RGBA);
 	if (!bmGround.GetBits()) return false;
 	bmRoad.Load("models/road.png", GL_RGBA);
 	if (!bmRoad.GetBits()) return false;
@@ -137,9 +160,10 @@ bool init()
 		GL_UNSIGNED_BYTE, bmRoad.GetBits());
 
 	// Setup the particle system
-	ProgramParticle.SendUniform("initialPos", 0.0, 0.58, 0.0);
+	//ProgramParticle.SendUniform("initialPos", 5.0, 8.0, 3.0); // not needed
 	//ProgramParticle.SendUniform("gravity", 0.0, -1.0, 0.0);
 	ProgramParticle.SendUniform("particleLifetime", LIFETIME);
+
 
 
 	// none (simple-white) texture
@@ -150,7 +174,7 @@ bool init()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_BGR, GL_UNSIGNED_BYTE, &bytes);
 
 	//Loading the snow particles bitmap
-	bmSnow.Load("models/snow.bmp", GL_RGBA);
+	bmSnow.Load("models/snowflake3.bmp", GL_RGBA);
 	if (!bmSnow.GetBits()) return false;
 	glActiveTexture(GL_TEXTURE0);
 	glGenTextures(1, &idTexSnow);
@@ -162,6 +186,7 @@ bool init()
 	// Prepare the particle buffers
 	std::vector<float> bufferVelocity;
 	std::vector<float> bufferStartTime;
+	std::vector<float> bufferPosition;
 	float time = 0;
 	for (int i = 0; i < NPARTICLES; i++)
 	{
@@ -173,8 +198,13 @@ bool init()
 		float v = 2 + 0.5f * (float)rand() / (float)RAND_MAX;
 
 		bufferVelocity.push_back(x * v);
-		bufferVelocity.push_back(y * v);
+		bufferVelocity.push_back(-y * v); //-y will make the particles flipped so now it will be facing downwards
 		bufferVelocity.push_back(z * v);
+
+		//particle position
+		bufferPosition.push_back(x * v);
+		bufferPosition.push_back(-y);
+		bufferPosition.push_back(z * v);
 
 		bufferStartTime.push_back(time);
 		time += PERIOD;
@@ -186,6 +216,10 @@ bool init()
 	glGenBuffers(1, &idBufferStartTime);
 	glBindBuffer(GL_ARRAY_BUFFER, idBufferStartTime);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * bufferStartTime.size(), &bufferStartTime[0],
+		GL_STATIC_DRAW);
+	glGenBuffers(1, &idBufferPosition);
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferPosition);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * bufferPosition.size(), &bufferPosition[0],
 		GL_STATIC_DRAW);
 
 	// switch on: transparency/blending
@@ -306,6 +340,9 @@ void render()
 		Program.SendUniform("lightAmbient.color", 0.4, 0.4, 0.4);
 
 		//Fog
+		//Fog Colour and Density
+		Program.SendUniform("fogColour", 1.0, 1.0, 1.0);
+		Program.SendUniform("fogDensity", 0.1);
 
 	} else if (dayLight == 0) //Nighttime
 	{
@@ -356,6 +393,10 @@ void render()
 		//Set map to be very dark
 		Program.SendUniform("materialDiffuse", 1.0, 1.0, 1.0);
 		Program.SendUniform("materialAmbient", 0.1, 0.1, 0.1);
+
+		//Fog Colour and Density
+		Program.SendUniform("fogColour", 0.2, 0.2, 0.35);
+		Program.SendUniform("fogDensity", 0.15);
 	}
 
 	// Render Particle Animation Time
@@ -366,7 +407,7 @@ void render()
 	glBindTexture(GL_TEXTURE_2D, idTexSand);
 	m = translate(matrixView, vec3(0, 0, 0));
 	//Program.SendUniform("materialAmbient", 0.41, 0.55, 0.13);
-	Program.SendUniform("materialDiffuse", 1.0, 1.0, 0.5);
+	Program.SendUniform("materialDiffuse", 1.0, 1.0, 1.0);
 	terrain.render(m);
 
 	// render the road
@@ -443,33 +484,28 @@ void render()
 	glActiveTexture(GL_TEXTURE0);			// choose the active texture
 	glBindTexture(GL_TEXTURE_2D, idTexSnow);	// bind the texture
 
-
 	ProgramParticle.Use();
-
 	m = matrixView;
+	m = translate(m, vec3(5.0, 50.0, 0.0));
+	m = scale(m, vec3(10.2f, 5.2f, 10.2f));
 	ProgramParticle.SendUniform("matrixModelView", m);
 
 	// render the buffer
 	glEnableVertexAttribArray(0);	// velocity
 	glEnableVertexAttribArray(1);	// start time
+	glEnableVertexAttribArray(2);	// position
 	glBindBuffer(GL_ARRAY_BUFFER, idBufferVelocity);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, idBufferStartTime);
 	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, idBufferPosition);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glDrawArrays(GL_POINTS, 0, NPARTICLES);
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
 
-	// render the buffer
-	glEnableVertexAttribArray(0);	// velocity
-	glEnableVertexAttribArray(1);	// start time
-	glBindBuffer(GL_ARRAY_BUFFER, idBufferVelocity);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, idBufferStartTime);
-	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 0, 0);
-	glDrawArrays(GL_POINTS, 0, NPARTICLES);
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
+
 
 	glDepthMask(GL_TRUE);		// don't forget to switch the depth test updates back on
 

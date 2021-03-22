@@ -4,6 +4,10 @@ in float age;
 uniform sampler2D texture0;
 out vec4 outColor;
 
+//Fog
+in float distanceFactor;
+in vec4 position;
+
 void main()
 {
     outColor = vec4(0, 0.5, 1.0, 1 - age);
