@@ -12,6 +12,10 @@ in vec2 texCoord0;
 uniform vec3 fogColour;
 in float fogFactor;
 
+//Rim Light
+vec3 V;
+vec3 N;
+uniform vec3 smoothstep;
 
 uniform sampler2D texture0;
 

@@ -52,6 +52,18 @@
     <None Include="shaders\particles.vert">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="shaders\terrain.frag">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="shaders\terrain.vert">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="shaders\water.frag">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="shaders\water.vert">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GL\3dgl.h">
