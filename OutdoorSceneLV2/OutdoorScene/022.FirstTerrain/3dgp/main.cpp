@@ -489,13 +489,13 @@ void render()
 	ProgramParticle.SendUniform("time", glutGet(GLUT_ELAPSED_TIME) / 1000.f - 2);
 
 	// render the terrain
-	ProgramTerrain.Use();
+	//ProgramBasic.SendUniform("materialAmbient", 0.41, 0.55, 0.13);
+	//ProgramBasic.SendUniform("materialDiffuse", 1.0, 1.0, 1.0);
 	m = matrixView;
 	m = translate(matrixView, vec3(0, 0, 0));
 	terrain.render(m);
 
 	// render the road
-	ProgramBasic.Use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, idTexRoad);
 	m = translate(matrixView, vec3(0, 0, 0));
@@ -516,7 +516,6 @@ void render()
 
 
 	//Lamp
-	ProgramBasic.Use();
 	m = matrixView;
 	m = translate(m, vec3(4.7f, 3.0f, 0.0f));
 	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
