@@ -489,6 +489,8 @@ void render()
 	ProgramParticle.SendUniform("time", glutGet(GLUT_ELAPSED_TIME) / 1000.f - 2);
 
 	// render the terrain
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, idTexSand);
 	ProgramTerrain.Use();
 	m = matrixView;
 	m = translate(matrixView, vec3(0, 0, 0));
