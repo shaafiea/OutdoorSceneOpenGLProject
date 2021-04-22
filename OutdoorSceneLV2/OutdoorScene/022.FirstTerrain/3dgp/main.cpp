@@ -70,6 +70,11 @@ GLuint idTexNormalSand;
 C3dglBitmap bmNormalBed;
 GLuint idTexNormalBed;
 
+//Sleigh
+C3dglModel santasleigh;
+C3dglBitmap bmRide; //Santa Sleigh Bitmap
+GLuint idTexSleigh;
+
 // Water specific variables
 float waterLevel = 3.6f;
 
@@ -172,6 +177,7 @@ bool init()
 	ProgramBasic.Use();
 	if (!lamp.load("models\\lamp2.obj")) return false;
 	if (!snowman.load("models\\snowman\\snwmnnn.fbx")) return false;
+	if (!santasleigh.load("models\\santasleigh\\santasleigh.obj")) return false;
 
 	// load your 3D models here!
 	if (!terrain.loadHeightmap("models\\one.bmp", 10)) return false;
@@ -208,6 +214,8 @@ bool init()
 	if (!bmNormalSand.GetBits()) return false;
 	bmNormalBed.Load("models/snowysandNormalMap.png", GL_RGBA);
 	if (!bmNormalBed.GetBits()) return false;
+	bmRide.Load("models/santasleigh/santasleigh_texture.bmp", GL_RGBA);
+	if (!bmRide.GetBits()) return false;
 
 
 	//Preparing the texture
@@ -249,6 +257,14 @@ bool init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bmNormalBed.GetWidth(), bmNormalBed.GetHeight(), 0, GL_RGBA,
 		GL_UNSIGNED_BYTE, bmNormalBed.GetBits());
+
+	//Sleigh
+	glActiveTexture(GL_TEXTURE0);
+	glGenTextures(1, &idTexSleigh);
+	glBindTexture(GL_TEXTURE_2D, idTexSleigh);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bmRide.GetWidth(), bmRide.GetHeight(), 0, GL_RGBA,
+		GL_UNSIGNED_BYTE, bmRide.GetBits());
 
 
 	/*glActiveTexture(GL_TEXTURE0);
@@ -458,6 +474,12 @@ void render()
 		ProgramTerrain.SendUniform("materialDiffuse", 1.0, 1.0, 1.0);
 		ProgramTerrain.SendUniform("materialAmbient", 0.1, 0.1, 0.1);
 
+		//SpotLight
+		ProgramBasic.SendUniform("lightSpot.on", 0);
+		ProgramBasic.SendUniform("lightSpot1.on", 0);
+		ProgramTerrain.SendUniform("lightSpot.on", 0);
+		ProgramTerrain.SendUniform("lightSpot1.on", 0);
+
 		//Render Skybox
 		ProgramBasic.SendUniform("materialAmbient", 1.0, 1.0, 1.0);
 		ProgramBasic.SendUniform("materialDiffuse", 0.0, 0.0, 0.0);
@@ -467,7 +489,7 @@ void render()
 
 		//Fog Colour and Density
 		ProgramBasic.SendUniform("fogColor", 1.0, 1.0, 1.0);
-		ProgramBasic.SendUniform("fogDensity", 0.1);
+		ProgramBasic.SendUniform("fogDensity", 0.03);
 		ProgramWater.SendUniform("fogColor", 0.2, 0.2, 0.35);
 		ProgramWater.SendUniform("fogDensity", 0.08);
 		ProgramTerrain.SendUniform("fogColor", 0.2, 0.2, 0.35);
@@ -548,6 +570,35 @@ void render()
 		ProgramTerrain.SendUniform("materialSpecular", 0.0, 0.0, 0.0);
 		ProgramTerrain.SendUniform("shininess", 3.0);
 		ProgramTerrain.SendUniform("att_quadratic", 0.5);
+
+		//SpotLight
+		ProgramBasic.SendUniform("lightSpot.on", 1);
+		ProgramBasic.SendUniform("lightSpot.diffuse", 7.0, 0.2, 0.0);
+		ProgramBasic.SendUniform("lightSpot.specular", 1.0, 1.0, 1.0);
+		ProgramBasic.SendUniform("lightSpot.direction", 0.0, -0.1, 1.0);
+		ProgramBasic.SendUniform("lightSpot.cutoff", 15.0);
+		ProgramBasic.SendUniform("lightSpot.attenuation", 3.0);
+		ProgramTerrain.SendUniform("lightSpot.on", 1);
+		ProgramTerrain.SendUniform("lightSpot.diffuse", 7.0, 0.2, 0.0);
+		ProgramTerrain.SendUniform("lightSpot.specular", 1.0, 1.0, 1.0);
+		ProgramTerrain.SendUniform("lightSpot.direction", 0.0, -0.1, 1.0);
+		ProgramTerrain.SendUniform("lightSpot.cutoff", 15.0);
+		ProgramTerrain.SendUniform("lightSpot.attenuation", 3.0);
+
+
+		//SpotLight
+		ProgramBasic.SendUniform("lightSpot1.on", 1);
+		ProgramBasic.SendUniform("lightSpot1.diffuse", 7.0, 0.2, 0.0);
+		ProgramBasic.SendUniform("lightSpot1.specular", 1.0, 1.0, 1.0);
+		ProgramBasic.SendUniform("lightSpot1.direction", 0.0, -0.1, 1.0);
+		ProgramBasic.SendUniform("lightSpot1.cutoff", 15.0);
+		ProgramBasic.SendUniform("lightSpot1.attenuation", 7.0);
+		ProgramTerrain.SendUniform("lightSpot1.on", 1);
+		ProgramTerrain.SendUniform("lightSpot1.diffuse", 7.0, 0.2, 0.0);
+		ProgramTerrain.SendUniform("lightSpot1.specular", 1.0, 1.0, 1.0);
+		ProgramTerrain.SendUniform("lightSpot1.direction", 0.0, -0.1, 1.0);
+		ProgramTerrain.SendUniform("lightSpot1.cutoff", 15.0);
+		ProgramTerrain.SendUniform("lightSpot1.attenuation", 7.0);
 
 		// render the nightbox
 		ProgramBasic.SendUniform("materialAmbient", 0.5, 0.5, 0.75);
@@ -678,6 +729,37 @@ void render()
 	//m = scale(m, vec3(1.0f, 1.0f, 1.0f));
 	//ProgramBasic.SendUniform("materialDiffuse", 0.1, 0.1, 0.1);
 	//snowman.render(m);
+
+		////Santa Sleigh
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, idTexSleigh);
+	float z = -32 + (glutGet(GLUT_ELAPSED_TIME) % (64 * 200)) / 200.f;
+	float h1 = terrain.getInterpolatedHeight(-15.5, z - 1);
+	float h2 = terrain.getInterpolatedHeight(-15.5, z + 1);
+	m = matrixView;
+	m = translate(m, vec3(-15.5f, (h1 + h2) / 2 + 0.14, z));
+	m = rotate(m, (float)atan2(h1 - h2, 2), vec3(1.0f, 0.0f, 0.0f));
+	//m = matrixView;
+	mat4 m1 = m;
+	//m = translate(m, vec3(5.5, 5.0, 1.0));
+	m = rotate(m, radians(0.0f), vec3(0, 1, 0));
+	m = scale(m, vec3(0.0045, 0.0045, 0.0045));
+	santasleigh.render(m);
+
+	//// render the headlights
+	m = m1;
+	m = scale(m, vec3(2.0f, 2.0f, 2.0f));
+	m = translate(m, vec3(0.12f, 0.28f, 0.68f));
+	ProgramBasic.SendUniform("materialAmbient", 1.0, 4.0, 0.0);
+	ProgramBasic.SendUniform("matrixModelView", m);
+	ProgramBasic.SendUniform("lightSpot.matrix", m);
+	glutSolidSphere(0.03, 42, 42);
+
+	m = translate(m, vec3(-0.24f, 0.0f, 0.0f));
+	ProgramBasic.SendUniform("matrixModelView", m);
+	ProgramBasic.SendUniform("lightSpot1.matrix", m);
+	glutSolidSphere(0.03, 42, 42);
+
 
 	// send the animation time to shaders
 	ProgramWater.SendUniform("t", glutGet(GLUT_ELAPSED_TIME) / 1000.f);

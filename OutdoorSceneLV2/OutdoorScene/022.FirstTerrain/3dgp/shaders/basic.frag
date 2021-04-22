@@ -61,15 +61,82 @@ vec4 PointLight(POINT light)
 	return color * att;
 }
 
+struct SPOT
+{
+	mat4 matrix;
+	int on;
+	vec3 position;
+	vec3 diffuse;
+	vec3 specular;
+	vec3 direction;
+	float cutoff; 
+	float attenuation;
+
+};
+uniform SPOT lightSpot, lightSpot1;
+
+vec4 SpotLight(SPOT light)
+{
+	// HERE GOES THE CODE COPIED FROM THE POINT LIGHT FUNCTION
+
+  // Calculate Point Light (Diffuse)
+	vec4 color = vec4(0, 0, 0, 0);
+	vec3 L = normalize((light.matrix) * vec4(light.position, 1) - position).xyz;
+	float NdotL = dot(normal.xyz, L);
+	if (NdotL > 0)
+		color += vec4(materialDiffuse * light.diffuse, 1) * NdotL;
+
+	//Point Light(Specular)
+	vec3 V = normalize(-position.xyz);
+	vec3 R = reflect(-L, normal.xyz);
+	float RdotV = dot(R, V);
+	if (NdotL > 0 && RdotV > 0)
+	    color += vec4(materialSpecular * light.specular * pow(RdotV, shininess), 1);
+
+	// HERE GOES THE NEW CODE TO DETERMINE THE SPOT FACTOR
+	vec3 D = normalize(mat3(light.matrix) * light.direction).xyz;
+	float spotFactor = dot(-L,D);
+	float attenuation = acos(spotFactor);
+
+	//Cutoff CarLight
+	float cutoff = radians(clamp(light.cutoff, 0, 90));
+
+	if(attenuation <= cutoff)
+	{
+		spotFactor=pow(spotFactor,light.attenuation);
+	}
+	else
+	{
+		spotFactor = 0;
+	}
+
+	// assuming that the Point Light value is stored as color and we have calculated spotFactor:
+	return spotFactor * color;
+}
+
 void main(void) 
 {
     outColor = color;
     if (lightPoint.on == 1) 
+	{
 		outColor += PointLight(lightPoint);
-	if (lightPoint1.on == 1) 
+	}
+	if (lightPoint1.on == 1)
+	{
 		outColor += PointLight(lightPoint1);
-	if (lightPoint2.on == 1) 
+	}
+	if (lightPoint2.on == 1)
+	{
 		outColor += PointLight(lightPoint2);
+	}
+	if (lightSpot.on == 1)
+	{
+		outColor += SpotLight(lightSpot);
+	}
+	if (lightSpot1.on == 1)
+	{
+		outColor += SpotLight(lightSpot1);
+	}
 
 	outColor *= texture(texture0, texCoord0);
 	outColor = mix(vec4(fogColor, 1), outColor, fogFactor);
