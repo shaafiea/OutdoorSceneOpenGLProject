@@ -5,7 +5,7 @@ uniform mat4 matrixProjection;
 uniform mat4 matrixView;
 uniform mat4 matrixModelView;
 
-// Uniforms: Material Colours
+// Uniforms: Material Colors
 uniform vec3 materialAmbient;
 uniform vec3 materialDiffuse;
 
@@ -29,9 +29,14 @@ uniform float waterLevel;	// water level (in absolute units)
 // Output: Water Related
 out float waterDepth;
 
-// FOG
+// FOG (Underwater)
 out float fogFactor;
 uniform float fogDensity;
+
+//(Terrain Fog)
+out float fogFactorT;
+uniform float fogDensityT;
+
 
 void main(void) 
 {
@@ -58,6 +63,9 @@ void main(void)
 	vec3 biTangent = cross(normal, tangent);
 	matrixTangent = mat3(tangent, biTangent, normal);
 
-	//calculate fog factor
+	//calcuate fog factor (terrain)
+	fogFactorT = exp2(-fogDensityT * length(position));
+
+	//calculate fog factor (UnderwaterFog)
 	fogFactor = exp2(-fogDensity * length(position) *  (max(waterDepth, 0) / eyeAlt));
 }

@@ -9,7 +9,7 @@ in vec3 normal;
 in vec2 texCoord0;
 
 //Fog
-uniform vec3 fogColour;
+uniform vec3 fogColor;
 in float fogFactor;
 
 //Rim Light
@@ -72,5 +72,5 @@ void main(void)
 		outColor += PointLight(lightPoint2);
 
 	outColor *= texture(texture0, texCoord0);
-	outColor = mix(vec4(fogColour, 1), outColor, fogFactor);
+	outColor = mix(vec4(fogColor, 1), outColor, fogFactor);
 }

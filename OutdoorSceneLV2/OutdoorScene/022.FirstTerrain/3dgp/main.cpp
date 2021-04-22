@@ -67,9 +67,11 @@ GLuint idTexNone;
 //Normal Map Textures
 C3dglBitmap bmNormalSand;
 GLuint idTexNormalSand;
+C3dglBitmap bmNormalBed;
+GLuint idTexNormalBed;
 
 // Water specific variables
-float waterLevel = 4.6f;
+float waterLevel = 3.6f;
 
 // camera position (for first person type camera navigation)
 mat4 matrixView;			// The View Matrix
@@ -167,12 +169,13 @@ bool init()
 	glutSetVertexAttribNormal(ProgramTerrain.GetAttribLocation("aNormal"));
 
 	//Loading 3D Models
+	ProgramBasic.Use();
 	if (!lamp.load("models\\lamp2.obj")) return false;
 	if (!snowman.load("models\\snowman\\snwmnnn.fbx")) return false;
 
 	// load your 3D models here!
-	if (!terrain.loadHeightmap("models\\heightmap.bmp", 10)) return false;
-	if (!road.loadHeightmap("models\\roadmap.bmp", 10)) return false;
+	if (!terrain.loadHeightmap("models\\one.bmp", 10)) return false;
+	if (!road.loadHeightmap("models\\two.bmp", 10)) return false;
 	if (!water.loadHeightmap("models\\watermap.png", 10)) return false;
 
 	// load Sky Box     
@@ -203,6 +206,8 @@ bool init()
 	if (!bmSnowman.GetBits()) return false;
 	bmNormalSand.Load("models/snowNormalMap.png", GL_RGBA);
 	if (!bmNormalSand.GetBits()) return false;
+	bmNormalBed.Load("models/snowysandNormalMap.png", GL_RGBA);
+	if (!bmNormalBed.GetBits()) return false;
 
 
 	//Preparing the texture
@@ -228,12 +233,22 @@ bool init()
 		GL_UNSIGNED_BYTE, bmSand.GetBits());
 
 	//Normal Map Texture
+
+	//Shore
 	glActiveTexture(GL_TEXTURE3);
 	glGenTextures(1, &idTexNormalSand);
 	glBindTexture(GL_TEXTURE_2D, idTexNormalSand);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bmNormalSand.GetWidth(), bmNormalSand.GetHeight(), 0, GL_RGBA,
 		GL_UNSIGNED_BYTE, bmNormalSand.GetBits());
+
+	//Bed
+	glActiveTexture(GL_TEXTURE4);
+	glGenTextures(1, &idTexNormalBed);
+	glBindTexture(GL_TEXTURE_2D, idTexNormalBed);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bmNormalBed.GetWidth(), bmNormalBed.GetHeight(), 0, GL_RGBA,
+		GL_UNSIGNED_BYTE, bmNormalBed.GetBits());
 
 
 	/*glActiveTexture(GL_TEXTURE0);
@@ -443,14 +458,6 @@ void render()
 		ProgramTerrain.SendUniform("materialDiffuse", 1.0, 1.0, 1.0);
 		ProgramTerrain.SendUniform("materialAmbient", 0.1, 0.1, 0.1);
 
-
-		////Terrain Lighting
-		//ProgramTerrain.SendUniform("lightAmbient.color", 0.7, 0.7, 0.7);
-		//ProgramTerrain.SendUniform("lightDir.direction", 1.0, 0.5, 1.0);
-		//ProgramTerrain.SendUniform("lightDir.diffuse", 0.7, 0.7, 0.7);
-		//ProgramTerrain.SendUniform("materialAmbient", 1.0, 1.0, 1.0);
-		//ProgramTerrain.SendUniform("materialDiffuse", 1.0, 1.0, 1.0);
-
 		//Render Skybox
 		ProgramBasic.SendUniform("materialAmbient", 1.0, 1.0, 1.0);
 		ProgramBasic.SendUniform("materialDiffuse", 0.0, 0.0, 0.0);
@@ -458,12 +465,15 @@ void render()
 		skybox.render(m);
 		ProgramBasic.SendUniform("lightAmbient.color", 0.4, 0.4, 0.4);
 
-		//Fog
 		//Fog Colour and Density
-		ProgramBasic.SendUniform("fogColour", 1.0, 1.0, 1.0);
+		ProgramBasic.SendUniform("fogColor", 1.0, 1.0, 1.0);
 		ProgramBasic.SendUniform("fogDensity", 0.1);
-		//ProgramTerrain.SendUniform("fogColour", 1.0, 1.0, 1.0);
-		//ProgramTerrain.SendUniform("fogDensity", 0.1);
+		ProgramWater.SendUniform("fogColor", 0.2, 0.2, 0.35);
+		ProgramWater.SendUniform("fogDensity", 0.08);
+		ProgramTerrain.SendUniform("fogColor", 0.2, 0.2, 0.35);
+		ProgramTerrain.SendUniform("fogDensity", 0.15);
+		ProgramTerrain.SendUniform("fogColorT", 1.0, 1.0, 1.0);
+		ProgramTerrain.SendUniform("fogDensityT", 0.03);
 
 	} else if (dayLight == 0) //Nighttime
 	{
@@ -552,10 +562,14 @@ void render()
 		ProgramTerrain.SendUniform("materialAmbient", 0.1, 0.1, 0.1);
 
 		////Fog Colour and Density
-		ProgramBasic.SendUniform("fogColour", 0.2, 0.2, 0.35);
-		ProgramBasic.SendUniform("fogDensity", 0.15);
-		//ProgramTerrain.SendUniform("fogColour", 0.2, 0.2, 0.35);
-		//ProgramTerrain.SendUniform("fogDensity", 0.15);
+		ProgramBasic.SendUniform("fogColor", 0.2, 0.2, 0.35);
+		ProgramBasic.SendUniform("fogDensity", 0.03);
+		ProgramWater.SendUniform("fogColor", 0.2, 0.2, 0.35);
+		ProgramWater.SendUniform("fogDensity", 0.15);
+		ProgramTerrain.SendUniform("fogColour", 0.2, 0.2, 0.35);
+		ProgramTerrain.SendUniform("fogDensity", 0.15);
+		ProgramTerrain.SendUniform("fogColorT", 0.2, 0.2, 0.35);
+		ProgramTerrain.SendUniform("fogDensityT", 0.03);
 	}
 
 	// Render Particle Animation Time
@@ -572,9 +586,14 @@ void render()
 	glBindTexture(GL_TEXTURE_2D, idTexSand);
 	ProgramTerrain.SendUniform("textureShore", 2);
 	//Normal Map Texture for above the water level
+	//Shore
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, idTexNormalSand);
 	ProgramTerrain.SendUniform("normalShore", 3);
+	//Bed
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, idTexNormalBed);
+	ProgramTerrain.SendUniform("normalBed", 4);
 	m = matrixView;
 	m = translate(matrixView, vec3(0, 0, 0));
 	terrain.render(m);
@@ -585,16 +604,17 @@ void render()
 	glBindTexture(GL_TEXTURE_2D, idTexRoad);
 	//Road Placement
 	m = translate(matrixView, vec3(0, 0, 0));
-	m = translate(m, vec3(6.0f, 0.01f, 0.0f));
+	m = translate(m, vec3(-15.0f, 0.01f, 0.0f));
 	//ProgramBasic.SendUniform("materialAmbient", 0.32, 0.32, 0.32);
 	ProgramBasic.SendUniform("materialDiffuse", 0.32, 0.32, 0.32);
 	road.render(m);
 
 	//Bulb
+	ProgramBasic.Use();
 	glBindTexture(GL_TEXTURE_2D, idTexNone);
 	m = matrixView;
 	m = translate(m, vec3(4.7f, 4.6f, 0.0f));
-	m = scale(m, vec3(0.2f, 0.2f, 0.2f));
+	m = scale(m, vec3(0.23f, 0.23f, 0.23f));
 	ProgramBasic.SendUniform("materialAmbient", 1.0, 1.0, 1.0);
 	ProgramBasic.SendUniform("matrixModelView", m);
 	glutSolidSphere(1, 32, 32);
@@ -602,28 +622,27 @@ void render()
 
 
 	//Lamp
-	ProgramBasic.Use();
 	m = matrixView;
-	m = translate(m, vec3(4.7f, 9.0f, 0.0f));
+	m = translate(m, vec3(4.7f, 3.0f, 0.0f));
 	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
-	m = scale(m, vec3(0.053f, 0.053f, 0.03f));
+	m = scale(m, vec3(0.013f, 0.013f, 0.013f));
 	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
 	ProgramBasic.SendUniform("materialDiffuse", 0.1, 0.1, 0.1);
 	lamp.render(m);
 
 
 	//Bulb 2
+	ProgramBasic.Use();
 	glBindTexture(GL_TEXTURE_2D, idTexNone);
 	m = matrixView;
 	m = translate(m, vec3(6.3f, 5.55f, 18.0f));
-	m = scale(m, vec3(0.2f, 0.2f, 0.2f));
+	m = scale(m, vec3(0.23f, 0.23f, 0.23f));
 	ProgramBasic.SendUniform("materialAmbient", 1.0, 1.0, 1.0);
 	ProgramBasic.SendUniform("matrixModelView", m);
 	glutSolidSphere(1, 32, 32);
 	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
 
 	//Lamp2
-	ProgramBasic.Use();
 	m = matrixView;
 	m = translate(m, vec3(6.3f, 3.95f, 18.0f));
 	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
@@ -633,17 +652,17 @@ void render()
 	lamp.render(m);
 
 	//Bulb 3
+	ProgramBasic.Use();
 	glBindTexture(GL_TEXTURE_2D, idTexNone);
 	m = matrixView;
 	m = translate(m, vec3(6.3f, 6.1f, -14.0f));
-	m = scale(m, vec3(0.2f, 0.2f, 0.2f));
+	m = scale(m, vec3(0.23f, 0.23f, 0.23f));
 	ProgramBasic.SendUniform("materialAmbient", 1.0, 1.0, 1.0);
 	ProgramBasic.SendUniform("matrixModelView", m);
 	glutSolidSphere(1, 32, 32);
 	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
 
 	//Lamp3
-	ProgramBasic.Use();
 	m = matrixView;
 	m = translate(m, vec3(6.3f, 4.47f, -14.0f));
 	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
@@ -663,19 +682,12 @@ void render()
 	// send the animation time to shaders
 	ProgramWater.SendUniform("t", glutGet(GLUT_ELAPSED_TIME) / 1000.f);
 
-	//Fog Colour and Density
-	ProgramWater.SendUniform("fogColour", 0.2, 0.2, 0.35);
-	ProgramWater.SendUniform("fogDensity", 0.15);
-	ProgramTerrain.SendUniform("fogColour", 0.2, 0.2, 0.35);
-	ProgramTerrain.SendUniform("waterColour", 0.2, 0.2, 0.35);
-	ProgramTerrain.SendUniform("fogDensity", 0.15);
-
 
 	// render the water
-	ProgramWater.Use();
 	m = matrixView;
 	m = translate(m, vec3(0, waterLevel, 0));
 	m = scale(m, vec3(0.5f, 1.0f, 0.5f));
+	ProgramTerrain.SendUniform("matrixModelView", m);
 	ProgramWater.SendUniform("matrixModelView", m);
 	water.render(m);
 

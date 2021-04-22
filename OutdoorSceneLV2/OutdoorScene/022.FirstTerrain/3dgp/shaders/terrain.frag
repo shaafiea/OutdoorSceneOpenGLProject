@@ -33,12 +33,17 @@ uniform sampler2D textureShore; // Above water Level Texture
 //Normal Maps
 in mat3 matrixTangent;
 uniform sampler2D normalShore;
+uniform sampler2D normalBed;
 vec3 normalNew;
 float NdotL;
 
-//Fog
-uniform vec3 fogColour;
+//Fog (UnderWater)
+uniform vec3 fogColor;
 in float fogFactor;
+
+//Fog (Terrain)
+uniform vec3 fogColorT;
+in float fogFactorT;
 
 
 // Light declarations
@@ -112,13 +117,14 @@ vec4 PointLight(POINT light)
 
 void main(void) 
 {
-	normalNew = 2.0 * texture(normalShore, texCoord0).xyz - vec3(1.0, 1.0, 1.0);
+
+	// shoreline multitexturing
+	float isAboveWater = clamp(-waterDepth, 0, 1); 
+	normalNew = 2.0 * mix(texture(normalBed, texCoord0), texture(normalShore, texCoord0), isAboveWater).xyz - vec3(1.0, 1.0, 1.0);
 	normalNew = normalize(matrixTangent * normalNew);
 
     // calculate light
 	outColor = color;
-	// shoreline multitexturing
-	float isAboveWater = clamp(-waterDepth, 0, 1); 
 
 	outColor = vec4(0, 0, 0, 1);
 	if (lightAmbient.on == 1)
@@ -147,5 +153,7 @@ void main(void)
 	}
 
 	outColor *= mix(texture(textureBed, texCoord0), texture(textureShore, texCoord0), isAboveWater);
-	outColor = mix(vec4(fogColour, 1), outColor, fogFactor);
+	outColor = mix(vec4(fogColorT, 1), outColor, fogFactorT); // Terrain Fog
+	outColor = mix(vec4(fogColor, 1), outColor, fogFactor); // Water Fog
+
 }

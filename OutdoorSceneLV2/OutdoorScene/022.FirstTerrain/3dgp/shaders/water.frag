@@ -16,12 +16,12 @@ uniform vec4 skyColor;
 in float reflFactor;			// reflection coefficient
 
 //Fog
-uniform vec3 fogColour;
+uniform vec3 fogColor;
 in float fogFactor;
 
 void main(void) 
 {
 	outColor = color;
 	outColor = mix(waterColor, skyColor, reflFactor);
-	outColor = mix(vec4(fogColour, 1), outColor, fogFactor);
+	outColor = mix(vec4(fogColor, 1), outColor, fogFactor);
 }
