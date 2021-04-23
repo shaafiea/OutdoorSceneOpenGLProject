@@ -90,7 +90,7 @@ struct POINT
 		vec3 specular;
 };
 
-uniform POINT lightPoint, lightPoint1, lightPoint2;
+uniform POINT lightPoint, lightPoint1, lightPoint2, lightPoint3;
 
 
 vec4 PointLight(POINT light)
@@ -204,6 +204,10 @@ void main(void)
 	if (lightPoint2.on == 1)
 	{
 		outColor += PointLight(lightPoint2);
+	}
+	if (lightPoint3.on == 1)
+	{
+		outColor += PointLight(lightPoint3);
 	}
 	if (lightSpot.on == 1)
 	{

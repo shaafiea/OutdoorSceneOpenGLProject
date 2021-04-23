@@ -55,8 +55,10 @@ C3dglBitmap bmGround;
 C3dglBitmap bmRoad;
 C3dglBitmap bmSnow;//Level 2 Particle System Textures
 C3dglBitmap bmSnowman;
+C3dglBitmap bmSnowmanNormal;
 
 GLuint idTexSnowman;
+GLuint idTexSnowmanNormal;
 GLuint idTexRoad;
 GLuint idTexSnow;
 
@@ -176,7 +178,7 @@ bool init()
 	//Loading 3D Models
 	ProgramBasic.Use();
 	if (!lamp.load("models\\lamp2.obj")) return false;
-	if (!snowman.load("models\\snowman\\snwmnnn.fbx")) return false;
+	if (!snowman.load("models\\snowmanv2\\snowman.obj")) return false;
 	if (!santasleigh.load("models\\santasleigh\\santasleigh.obj")) return false;
 
 	// load your 3D models here!
@@ -208,8 +210,10 @@ bool init()
 	if (!bmSand.GetBits()) return false;
 	bmRoad.Load("models/road.png", GL_RGBA);
 	if (!bmRoad.GetBits()) return false;
-	bmSnowman.Load("models/snowman/snwmnnn.fbx", GL_RGBA);
+	bmSnowman.Load("models/snowmanv2/map_snowman1_BaseColor.png", GL_RGBA);
 	if (!bmSnowman.GetBits()) return false;
+	bmSnowmanNormal.Load("models/snowmanv2/map_snowman1_Normal.png", GL_RGBA);
+	if (!bmSnowmanNormal.GetBits()) return false;
 	bmNormalSand.Load("models/snowNormalMap.png", GL_RGBA);
 	if (!bmNormalSand.GetBits()) return false;
 	bmNormalBed.Load("models/snowysandNormalMap.png", GL_RGBA);
@@ -267,12 +271,18 @@ bool init()
 		GL_UNSIGNED_BYTE, bmRide.GetBits());
 
 
-	/*glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
 	glGenTextures(1, &idTexSnowman);
 	glBindTexture(GL_TEXTURE_2D, idTexSnowman);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bmSnowman.GetWidth(), bmSnowman.GetHeight(), 0, GL_RGBA,
-		GL_UNSIGNED_BYTE, bmSnowman.GetBits());*/
+		GL_UNSIGNED_BYTE, bmSnowman.GetBits());
+	glActiveTexture(GL_TEXTURE1);
+	glGenTextures(1, &idTexSnowmanNormal);
+	glBindTexture(GL_TEXTURE_2D, idTexSnowmanNormal);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bmSnowmanNormal.GetWidth(), bmSnowmanNormal.GetHeight(), 0, GL_RGBA,
+		GL_UNSIGNED_BYTE, bmSnowmanNormal.GetBits());
 
 
 	// Setup the particle system
@@ -344,9 +354,9 @@ bool init()
 	// Initialise the View Matrix (initial position of the camera)
 	matrixView = rotate(mat4(1.f), radians(angleTilt), vec3(1.f, 0.f, 0.f));
 	matrixView *= lookAt(
-		vec3(4.0, 1.5, 30.0),
-		vec3(4.0, 1.5, 0.0),
-		vec3(0.0, 1.0, 0.0));
+		vec3(4.0, 10.5, 30.0),
+		vec3(4.0, 10.5, 0.0),
+		vec3(0.0, 10.0, 0.0));
 
 	// Send the texture info to the shaders
 	ProgramBasic.SendUniform("texture0", 0);
@@ -411,6 +421,7 @@ void render()
 		ProgramBasic.SendUniform("lightPoint.on", pointLight);
 		ProgramBasic.SendUniform("lightPoint1.on", pointLight);
 		ProgramBasic.SendUniform("lightPoint2.on", pointLight);
+		ProgramBasic.SendUniform("lightPoint3.on", pointLight);
 
 		//setup switches to the lights (Terrain Shader)
 		ProgramTerrain.SendUniform("lightAmbient.on", ambientLight);
@@ -419,6 +430,7 @@ void render()
 		ProgramTerrain.SendUniform("lightPoint.on", pointLight);
 		ProgramTerrain.SendUniform("lightPoint1.on", pointLight);
 		ProgramTerrain.SendUniform("lightPoint2.on", pointLight);
+		ProgramTerrain.SendUniform("lightPoint3.on", pointLight);
 
 		//Daylight
 		ProgramBasic.SendUniform("lightAmbient.on", 1);
@@ -445,29 +457,17 @@ void render()
 
 			////PointLight (Lamps)
 		ProgramBasic.SendUniform("lightPoint.on", 0);
-        ProgramBasic.SendUniform("lightPoint.position", 1.1, 4.3, 1.0);
-		ProgramBasic.SendUniform("lightPoint.diffuse", 0.5, 0.5, 0.5);
-		ProgramBasic.SendUniform("lightPoint.specular", 1.0, 1.0, 1.0);
 		ProgramBasic.SendUniform("lightPoint1.on", 0);
-		ProgramBasic.SendUniform("lightPoint1.diffuse", 0.5, 0.5, 0.5);
-		ProgramBasic.SendUniform("lightPoint1.specular", 1.0, 1.0, 1.0);
 		ProgramBasic.SendUniform("lightPoint2.on", 0);
-		ProgramBasic.SendUniform("lightPoint2.diffuse", 0.5, 0.5, 0.5);
-		ProgramBasic.SendUniform("lightPoint2.specular", 1.0, 1.0, 1.0);
+		ProgramBasic.SendUniform("lightPoint3.on", 0);
 		ProgramBasic.SendUniform("materialSpecular", 0.3, 0.3, 0.7);
 		ProgramBasic.SendUniform("shininess", 3.0);
 		ProgramBasic.SendUniform("att_quadratic", 0.5);
 
 		ProgramTerrain.SendUniform("lightPoint.on", 0);
-		ProgramTerrain.SendUniform("lightPoint.position", 1.1, 4.3, 1.0);
-		ProgramTerrain.SendUniform("lightPoint.diffuse", 0.5, 0.5, 0.5);
-		ProgramTerrain.SendUniform("lightPoint.specular", 1.0, 1.0, 1.0);
 		ProgramTerrain.SendUniform("lightPoint1.on", 0);
-		ProgramTerrain.SendUniform("lightPoint1.diffuse", 0.5, 0.5, 0.5);
-		ProgramTerrain.SendUniform("lightPoint1.specular", 1.0, 1.0, 1.0);
 		ProgramTerrain.SendUniform("lightPoint2.on", 0);
-		ProgramTerrain.SendUniform("lightPoint2.diffuse", 0.5, 0.5, 0.5);
-		ProgramTerrain.SendUniform("lightPoint2.specular", 1.0, 1.0, 1.0);
+		ProgramTerrain.SendUniform("lightPoint3.on", 0);
 		ProgramTerrain.SendUniform("materialSpecular", 0.3, 0.3, 0.7);
 		ProgramTerrain.SendUniform("shininess", 3.0);
 		ProgramTerrain.SendUniform("att_quadratic", 0.5);
@@ -489,13 +489,13 @@ void render()
 
 		//Fog Colour and Density
 		ProgramBasic.SendUniform("fogColor", 1.0, 1.0, 1.0);
-		ProgramBasic.SendUniform("fogDensity", 0.03);
+		ProgramBasic.SendUniform("fogDensity", 0.0);
 		ProgramWater.SendUniform("fogColor", 0.2, 0.2, 0.35);
 		ProgramWater.SendUniform("fogDensity", 0.08);
 		ProgramTerrain.SendUniform("fogColor", 0.2, 0.2, 0.35);
-		ProgramTerrain.SendUniform("fogDensity", 0.15);
+		ProgramTerrain.SendUniform("fogDensity", 0.08);
 		ProgramTerrain.SendUniform("fogColorT", 1.0, 1.0, 1.0);
-		ProgramTerrain.SendUniform("fogDensityT", 0.03);
+		ProgramTerrain.SendUniform("fogDensityT", 0.0);
 
 	} else if (dayLight == 0) //Nighttime
 	{
@@ -506,7 +506,8 @@ void render()
 		ProgramBasic.SendUniform("lightPoint.on", pointLight);
 		ProgramBasic.SendUniform("lightPoint1.on", pointLight);
 		ProgramBasic.SendUniform("lightPoint2.on", pointLight);
-		
+		ProgramBasic.SendUniform("lightPoint3.on", pointLight);
+
 		//setup switches to the lights (Terrain Shader)
 		ProgramTerrain.SendUniform("lightAmbient.on", ambientLight);
 		ProgramTerrain.SendUniform("lightAmbient1.on", ambientLight);
@@ -514,6 +515,7 @@ void render()
 		ProgramTerrain.SendUniform("lightPoint.on", pointLight);
 		ProgramTerrain.SendUniform("lightPoint1.on", pointLight);
 		ProgramTerrain.SendUniform("lightPoint2.on", pointLight);
+		ProgramTerrain.SendUniform("lightPoint3.on", pointLight);
 
 		//Daylight
 		ProgramBasic.SendUniform("lightAmbient.on", 0);
@@ -522,9 +524,9 @@ void render()
 		ProgramTerrain.SendUniform("lightAmbient.on", 0);
 		ProgramTerrain.SendUniform("lightAmbient.color", 0.0, 0.0, 0.0);
 
-		//Bulb Lights Off
+		//Bulb Lights On
 		ProgramBasic.SendUniform("lightAmbient1.on", 1);
-		ProgramBasic.SendUniform("lightAmbient1.color", 1.0, 1.0, 1.0);
+		ProgramBasic.SendUniform("lightAmbient1.color", 5.0, 5.0, 5.0);
 
 		ProgramTerrain.SendUniform("lightAmbient1.on", 1);
 		ProgramTerrain.SendUniform("lightAmbient1.color", 1.0, 1.0, 1.0);
@@ -540,46 +542,54 @@ void render()
 
 			////PointLight (Lamps)
 		ProgramBasic.SendUniform("lightPoint.on", 1);
-		ProgramBasic.SendUniform("lightPoint.position", 4.7, 4.6, 0.0);
-		ProgramBasic.SendUniform("lightPoint.diffuse", 1.5, 1.5, 1.5);
+		ProgramBasic.SendUniform("lightPoint.position", -16.5, 7.2, 0.0); //lamp1
+		ProgramBasic.SendUniform("lightPoint.diffuse", 0.5, 0.5, 0.5);
 		ProgramBasic.SendUniform("lightPoint.specular", 1.0, 1.0, 1.0);
 		ProgramBasic.SendUniform("lightPoint1.on", 1);
-		ProgramBasic.SendUniform("lightPoint1.position", 6.3, 5.5, 18.0);
-		ProgramBasic.SendUniform("lightPoint1.diffuse", 1.5, 1.5, 1.5);
+		ProgramBasic.SendUniform("lightPoint1.position", -14.3, 8.3, 22.0); //lamp2
+		ProgramBasic.SendUniform("lightPoint1.diffuse", 0.5, 0.5, 0.5);
 		ProgramBasic.SendUniform("lightPoint1.specular", 1.0, 1.0, 1.0);
 		ProgramBasic.SendUniform("lightPoint2.on", 1);
-		ProgramBasic.SendUniform("lightPoint2.position", 6.3, 6.1, -14.0);
-		ProgramBasic.SendUniform("lightPoint2.diffuse", 1.5, 1.5, 1.5);
+		ProgramBasic.SendUniform("lightPoint2.position", -14.3, 9.0, -14.0); //lamp3
+		ProgramBasic.SendUniform("lightPoint2.diffuse", 0.5, 0.5, 0.5);
 		ProgramBasic.SendUniform("lightPoint2.specular", 1.0, 1.0, 1.0);
+		ProgramBasic.SendUniform("lightPoint3.on", 1);
+		ProgramBasic.SendUniform("lightPoint3.position", 14.9, 8.1, -2.0); //lamp4
+		ProgramBasic.SendUniform("lightPoint3.diffuse", 0.5, 0.5, 0.5);
+		ProgramBasic.SendUniform("lightPoint3.specular", 1.0, 1.0, 1.0);
 		ProgramBasic.SendUniform("materialSpecular", 0.0, 0.0, 0.0);
 		ProgramBasic.SendUniform("shininess", 3.0);
 		ProgramBasic.SendUniform("att_quadratic", 0.5);
 
 		ProgramTerrain.SendUniform("lightPoint.on", 1);
-		ProgramTerrain.SendUniform("lightPoint.position", 4.7, 4.6, 0.0);
+		ProgramTerrain.SendUniform("lightPoint.position", -16.5, 7.2, 0.0); //lamp1
 		ProgramTerrain.SendUniform("lightPoint.diffuse", 0.5, 0.5, 0.5);
 		ProgramTerrain.SendUniform("lightPoint.specular", 1.0, 1.0, 1.0);
 		ProgramTerrain.SendUniform("lightPoint1.on", 1);
-		ProgramTerrain.SendUniform("lightPoint1.position", 6.3, 5.5, 18.0);
+		ProgramTerrain.SendUniform("lightPoint1.position", -14.3, 8.3, 22.0); //lamp2
 		ProgramTerrain.SendUniform("lightPoint1.diffuse", 1.5, 1.5, 1.5);
 		ProgramTerrain.SendUniform("lightPoint1.specular", 1.0, 1.0, 1.0);
 		ProgramTerrain.SendUniform("lightPoint2.on", 1);
-		ProgramTerrain.SendUniform("lightPoint2.position", 6.3, 6.1, -14.0);
+		ProgramTerrain.SendUniform("lightPoint2.position", -14.3, 9.0, -14.0); //lamp3
 		ProgramTerrain.SendUniform("lightPoint2.diffuse", 1.5, 1.5, 1.5);
 		ProgramTerrain.SendUniform("lightPoint2.specular", 1.0, 1.0, 1.0);
+		ProgramTerrain.SendUniform("lightPoint3.on", 1);
+		ProgramTerrain.SendUniform("lightPoint3.position", 14.9, 8.1, -2.0); //lamp4
+		ProgramTerrain.SendUniform("lightPoint3.diffuse", 0.5, 0.5, 0.5);
+		ProgramTerrain.SendUniform("lightPoint3.specular", 1.0, 1.0, 1.0);
 		ProgramTerrain.SendUniform("materialSpecular", 0.0, 0.0, 0.0);
 		ProgramTerrain.SendUniform("shininess", 3.0);
 		ProgramTerrain.SendUniform("att_quadratic", 0.5);
 
 		//SpotLight
 		ProgramBasic.SendUniform("lightSpot.on", 1);
-		ProgramBasic.SendUniform("lightSpot.diffuse", 7.0, 0.2, 0.0);
+		ProgramBasic.SendUniform("lightSpot.diffuse", 4.0, 2.7, 0.0);
 		ProgramBasic.SendUniform("lightSpot.specular", 1.0, 1.0, 1.0);
 		ProgramBasic.SendUniform("lightSpot.direction", 0.0, -0.1, 1.0);
 		ProgramBasic.SendUniform("lightSpot.cutoff", 15.0);
 		ProgramBasic.SendUniform("lightSpot.attenuation", 3.0);
 		ProgramTerrain.SendUniform("lightSpot.on", 1);
-		ProgramTerrain.SendUniform("lightSpot.diffuse", 7.0, 0.2, 0.0);
+		ProgramTerrain.SendUniform("lightSpot.diffuse", 4.0, 2.7, 0.0);
 		ProgramTerrain.SendUniform("lightSpot.specular", 1.0, 1.0, 1.0);
 		ProgramTerrain.SendUniform("lightSpot.direction", 0.0, -0.1, 1.0);
 		ProgramTerrain.SendUniform("lightSpot.cutoff", 15.0);
@@ -588,39 +598,39 @@ void render()
 
 		//SpotLight
 		ProgramBasic.SendUniform("lightSpot1.on", 1);
-		ProgramBasic.SendUniform("lightSpot1.diffuse", 7.0, 0.2, 0.0);
+		ProgramBasic.SendUniform("lightSpot1.diffuse", 4.0, 2.7, 0.0);
 		ProgramBasic.SendUniform("lightSpot1.specular", 1.0, 1.0, 1.0);
 		ProgramBasic.SendUniform("lightSpot1.direction", 0.0, -0.1, 1.0);
 		ProgramBasic.SendUniform("lightSpot1.cutoff", 15.0);
 		ProgramBasic.SendUniform("lightSpot1.attenuation", 7.0);
 		ProgramTerrain.SendUniform("lightSpot1.on", 1);
-		ProgramTerrain.SendUniform("lightSpot1.diffuse", 7.0, 0.2, 0.0);
+		ProgramTerrain.SendUniform("lightSpot1.diffuse", 4.0, 2.7, 0.0);
 		ProgramTerrain.SendUniform("lightSpot1.specular", 1.0, 1.0, 1.0);
 		ProgramTerrain.SendUniform("lightSpot1.direction", 0.0, -0.1, 1.0);
 		ProgramTerrain.SendUniform("lightSpot1.cutoff", 15.0);
 		ProgramTerrain.SendUniform("lightSpot1.attenuation", 7.0);
 
 		// render the nightbox
-		ProgramBasic.SendUniform("materialAmbient", 0.5, 0.5, 0.75);
+		ProgramBasic.SendUniform("materialAmbient", 0.1, 0.1, 0.3);
 		ProgramBasic.SendUniform("materialDiffuse", 0.0, 0.0, 0.0);
 		m = matrixView;
 		nightbox.render(m);
 		
 		//Set map to be very dark
-		ProgramBasic.SendUniform("materialDiffuse", 1.0, 1.0, 1.0);
+		ProgramBasic.SendUniform("materialDiffuse", 0.12, 0.12, 0.12);
 		ProgramBasic.SendUniform("materialAmbient", 0.1, 0.1, 0.1);
-		ProgramTerrain.SendUniform("materialDiffuse", 1.0, 1.0, 1.0);
+		ProgramTerrain.SendUniform("materialDiffuse", 0.12, 0.12, 0.12);
 		ProgramTerrain.SendUniform("materialAmbient", 0.1, 0.1, 0.1);
 
 		////Fog Colour and Density
 		ProgramBasic.SendUniform("fogColor", 0.2, 0.2, 0.35);
-		ProgramBasic.SendUniform("fogDensity", 0.03);
+		ProgramBasic.SendUniform("fogDensity", 0.08);
 		ProgramWater.SendUniform("fogColor", 0.2, 0.2, 0.35);
 		ProgramWater.SendUniform("fogDensity", 0.15);
 		ProgramTerrain.SendUniform("fogColour", 0.2, 0.2, 0.35);
 		ProgramTerrain.SendUniform("fogDensity", 0.15);
 		ProgramTerrain.SendUniform("fogColorT", 0.2, 0.2, 0.35);
-		ProgramTerrain.SendUniform("fogDensityT", 0.03);
+		ProgramTerrain.SendUniform("fogDensityT", 0.1);
 	}
 
 	// Render Particle Animation Time
@@ -656,15 +666,15 @@ void render()
 	//Road Placement
 	m = translate(matrixView, vec3(0, 0, 0));
 	m = translate(m, vec3(-15.0f, 0.01f, 0.0f));
-	//ProgramBasic.SendUniform("materialAmbient", 0.32, 0.32, 0.32);
-	ProgramBasic.SendUniform("materialDiffuse", 0.32, 0.32, 0.32);
+	ProgramBasic.SendUniform("materialDiffuse", 0.12, 0.12, 0.12);
 	road.render(m);
+
 
 	//Bulb
 	ProgramBasic.Use();
 	glBindTexture(GL_TEXTURE_2D, idTexNone);
 	m = matrixView;
-	m = translate(m, vec3(4.7f, 4.6f, 0.0f));
+	m = translate(m, vec3(-16.5f, 8.38f, 0.0f));
 	m = scale(m, vec3(0.23f, 0.23f, 0.23f));
 	ProgramBasic.SendUniform("materialAmbient", 1.0, 1.0, 1.0);
 	ProgramBasic.SendUniform("matrixModelView", m);
@@ -672,9 +682,9 @@ void render()
 	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
 
 
-	//Lamp
+	//Lamp Middle Lamp
 	m = matrixView;
-	m = translate(m, vec3(4.7f, 3.0f, 0.0f));
+	m = translate(m, vec3(-16.5f, 6.75f, 0.0f));
 	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
 	m = scale(m, vec3(0.013f, 0.013f, 0.013f));
 	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
@@ -682,40 +692,59 @@ void render()
 	lamp.render(m);
 
 
-	//Bulb 2
+	////Bulb 2
 	ProgramBasic.Use();
 	glBindTexture(GL_TEXTURE_2D, idTexNone);
 	m = matrixView;
-	m = translate(m, vec3(6.3f, 5.55f, 18.0f));
+	m = translate(m, vec3(-14.3f, 9.28f, 22.0f));
 	m = scale(m, vec3(0.23f, 0.23f, 0.23f));
 	ProgramBasic.SendUniform("materialAmbient", 1.0, 1.0, 1.0);
 	ProgramBasic.SendUniform("matrixModelView", m);
 	glutSolidSphere(1, 32, 32);
 	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
 
-	//Lamp2
+	//Lamp2 Top of the Hill
 	m = matrixView;
-	m = translate(m, vec3(6.3f, 3.95f, 18.0f));
-	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
+	m = translate(m, vec3(-14.3f, 7.65f, 22.0f));
 	m = scale(m, vec3(0.013f, 0.013f, 0.013f));
 	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
 	ProgramBasic.SendUniform("materialDiffuse", 0.1, 0.1, 0.1);
 	lamp.render(m);
 
-	//Bulb 3
+	////Bulb 3
 	ProgramBasic.Use();
 	glBindTexture(GL_TEXTURE_2D, idTexNone);
 	m = matrixView;
-	m = translate(m, vec3(6.3f, 6.1f, -14.0f));
+	m = translate(m, vec3(-14.3f, 9.86f, -14.0f));
 	m = scale(m, vec3(0.23f, 0.23f, 0.23f));
 	ProgramBasic.SendUniform("materialAmbient", 1.0, 1.0, 1.0);
 	ProgramBasic.SendUniform("matrixModelView", m);
 	glutSolidSphere(1, 32, 32);
 	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
 
-	//Lamp3
+	//Lamp3 Bottom of Hill
 	m = matrixView;
-	m = translate(m, vec3(6.3f, 4.47f, -14.0f));
+	m = translate(m, vec3(-14.3f, 8.23f, -14.0f));
+	m = rotate(m, radians(10.0f), vec3(0.0f, 1.0f, 0.0f));
+	m = scale(m, vec3(0.013f, 0.013f, 0.013f));
+	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
+	ProgramBasic.SendUniform("materialDiffuse", 0.1, 0.1, 0.1);
+	lamp.render(m);
+
+	//Bulb 4
+	ProgramBasic.Use();
+	glBindTexture(GL_TEXTURE_2D, idTexNone);
+	m = matrixView;
+	m = translate(m, vec3(14.9f, 9.285f, -2.0f));
+	m = scale(m, vec3(0.23f, 0.23f, 0.23f));
+	ProgramBasic.SendUniform("materialAmbient", 1.0, 1.0, 1.0);
+	ProgramBasic.SendUniform("matrixModelView", m);
+	glutSolidSphere(1, 32, 32);
+	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
+
+	//Lamp 4 Right Side of Terrain
+	m = matrixView;
+	m = translate(m, vec3(14.9f, 7.655f, -2.0f));
 	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
 	m = scale(m, vec3(0.013f, 0.013f, 0.013f));
 	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
@@ -723,12 +752,20 @@ void render()
 	lamp.render(m);
 
 	////Snowman
-	//m = matrixView;
-	//m = translate(m, vec3(6.3f, 4.47f, -14.0f));
-	//m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
-	//m = scale(m, vec3(1.0f, 1.0f, 1.0f));
-	//ProgramBasic.SendUniform("materialDiffuse", 0.1, 0.1, 0.1);
-	//snowman.render(m);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, idTexSnowman);
+	ProgramBasic.SendUniform("texture0", 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, idTexSnowmanNormal);
+	ProgramBasic.SendUniform("textureNormal", 1);
+	m = matrixView;
+	m = translate(m, vec3(14.9f, 7.655f, -1.5f));
+	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
+	m = scale(m, vec3(0.7f, 0.7f, 0.7f));
+	ProgramBasic.SendUniform("materialAmbient", 0.015, 0.015, 0.015);
+	ProgramBasic.SendUniform("materialDiffuse", 1.0, 1.0, 1.0);
+	snowman.render(m);
+	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
 
 		////Santa Sleigh
 	glActiveTexture(GL_TEXTURE0);
@@ -739,18 +776,18 @@ void render()
 	m = matrixView;
 	m = translate(m, vec3(-15.5f, (h1 + h2) / 2 + 0.14, z));
 	m = rotate(m, (float)atan2(h1 - h2, 2), vec3(1.0f, 0.0f, 0.0f));
-	//m = matrixView;
 	mat4 m1 = m;
-	//m = translate(m, vec3(5.5, 5.0, 1.0));
 	m = rotate(m, radians(0.0f), vec3(0, 1, 0));
 	m = scale(m, vec3(0.0045, 0.0045, 0.0045));
+	ProgramBasic.SendUniform("materialAmbient", 0.015, 0.015, 0.015);
 	santasleigh.render(m);
+	ProgramBasic.SendUniform("materialAmbient", 0.0, 0.0, 0.0);
 
 	//// render the headlights
 	m = m1;
 	m = scale(m, vec3(2.0f, 2.0f, 2.0f));
 	m = translate(m, vec3(0.12f, 0.28f, 0.68f));
-	ProgramBasic.SendUniform("materialAmbient", 1.0, 4.0, 0.0);
+	ProgramBasic.SendUniform("materialAmbient", 1.0, 7.0, 0.0);
 	ProgramBasic.SendUniform("matrixModelView", m);
 	ProgramBasic.SendUniform("lightSpot.matrix", m);
 	glutSolidSphere(0.03, 42, 42);

@@ -7,6 +7,8 @@ out vec4 outColor;
 in vec4 position;
 in vec3 normal;
 in vec2 texCoord0;
+in mat3 matrixTangent;
+vec3 normalNew;
 
 //Fog
 uniform vec3 fogColor;
@@ -18,6 +20,7 @@ vec3 N;
 uniform vec3 smoothstep;
 
 uniform sampler2D texture0;
+uniform sampler2D textureNormal;
 
 // Materials
 uniform vec3 materialAmbient;
@@ -30,6 +33,43 @@ uniform float att_quadratic;
 // View Matrix
 uniform mat4 matrixView;
 
+// Light declarations
+
+// Ambient Lights
+struct AMBIENT
+{	
+	int on;
+	vec3 color;
+};
+uniform AMBIENT lightAmbient, lightAmbient1;
+
+vec4 AmbientLight(AMBIENT light)
+{
+	// Calculate Ambient Light
+	return vec4(materialAmbient * light.color, 1);
+}
+
+//Directional Light
+struct DIRECTIONAL
+{	
+	int on;
+	vec3 direction;
+	vec3 diffuse;
+};
+uniform DIRECTIONAL lightDir;
+
+vec4 DirectionalLight(DIRECTIONAL light)
+{
+	// Calculate Directional Light
+	vec4 color = vec4(0, 0, 0, 0);
+	vec3 L = normalize(mat3(matrixView) * light.direction);
+	float NdotL = dot(normalNew, L);
+	if (NdotL > 0)
+		color += vec4(materialDiffuse * light.diffuse, 1) * NdotL;
+	return color;
+}
+
+
 struct POINT
 {
 		int on;
@@ -37,7 +77,7 @@ struct POINT
 		vec3 diffuse;
 		vec3 specular;
 };
-uniform POINT lightPoint, lightPoint1, lightPoint2;
+uniform POINT lightPoint, lightPoint1, lightPoint2, lightPoint3;
 
 
 vec4 PointLight(POINT light)
@@ -48,13 +88,13 @@ vec4 PointLight(POINT light)
 	// Calculate Point Light (Diffuse)
 	vec4 color = vec4(0, 0, 0, 0);
 	vec3 L = normalize((matrixView) * vec4(light.position, 1) - position).xyz;
-	float NdotL = dot(normal, L);
+	float NdotL = dot(normalNew, L);
 	if (NdotL > 0)
 		color += vec4(materialDiffuse * light.diffuse, 1) * NdotL;
 
 	//Point Light(Specular)
 	vec3 V = normalize(-position.xyz);
-	vec3 R = reflect(-L, normal);
+	vec3 R = reflect(-L, normalNew);
 	float RdotV = dot(R, V);
 	if (NdotL > 0 && RdotV > 0)
 	    color += vec4(materialSpecular * light.specular * pow(RdotV, shininess), 1);
@@ -116,7 +156,24 @@ vec4 SpotLight(SPOT light)
 
 void main(void) 
 {
+	normalNew = 2.0 * texture(textureNormal, texCoord0).xyz - vec3(1.0, 1.0, 1.0);
+	normalNew = normalize(matrixTangent * normalNew);
+
+	  // calculate light
     outColor = color;
+	outColor = vec4(0, 0, 0, 1);
+	if (lightAmbient.on == 1)
+	{
+		outColor += AmbientLight(lightAmbient);
+	}
+	if (lightAmbient1.on == 1)
+	{
+		outColor += AmbientLight(lightAmbient1);
+	}
+	if (lightDir.on == 1)
+	{
+		outColor += DirectionalLight(lightDir);
+	}
     if (lightPoint.on == 1) 
 	{
 		outColor += PointLight(lightPoint);
@@ -128,6 +185,10 @@ void main(void)
 	if (lightPoint2.on == 1)
 	{
 		outColor += PointLight(lightPoint2);
+	}
+	if (lightPoint3.on == 1)
+	{
+		outColor += PointLight(lightPoint3);
 	}
 	if (lightSpot.on == 1)
 	{
