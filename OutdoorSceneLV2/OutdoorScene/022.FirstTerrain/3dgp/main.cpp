@@ -526,7 +526,7 @@ void render()
 
 		//Bulb Lights On
 		ProgramBasic.SendUniform("lightAmbient1.on", 1);
-		ProgramBasic.SendUniform("lightAmbient1.color", 5.0, 5.0, 5.0);
+		ProgramBasic.SendUniform("lightAmbient1.color", 1.0, 1.0, 1.0);
 
 		ProgramTerrain.SendUniform("lightAmbient1.on", 1);
 		ProgramTerrain.SendUniform("lightAmbient1.color", 1.0, 1.0, 1.0);
@@ -663,10 +663,10 @@ void render()
 	//Apply Road Texture
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, idTexRoad);
+	ProgramBasic.SendUniform("texture0", 0);
 	//Road Placement
 	m = translate(matrixView, vec3(0, 0, 0));
 	m = translate(m, vec3(-15.0f, 0.01f, 0.0f));
-	ProgramBasic.SendUniform("materialDiffuse", 0.12, 0.12, 0.12);
 	road.render(m);
 
 
